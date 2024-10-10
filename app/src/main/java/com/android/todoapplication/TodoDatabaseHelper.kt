@@ -52,9 +52,29 @@ class TodoDatabaseHelper(context: Context) :
         onCreate(db)
     }
 
+    fun insertTask(taskText: String) {
+        val db = this.writableDatabase
+        val values = ContentValues()
+        values.put(COLUMN_LIST_NAME, taskText)
+        db.insert(TABLE_TODO_LIST, null, values)
+        db.close()
+    }
 
+    fun getAllTodoLists(): List<String> {
+        val todoLists = mutableListOf<String>()
+        val db = this.readableDatabase
+        val query = "SELECT $COLUMN_LIST_NAME FROM $TABLE_TODO_LIST"
+        val cursor = db.rawQuery(query, null)
 
-
+        if (cursor.moveToFirst()) {
+            do {
+                val listName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LIST_NAME))
+                todoLists.add(listName)
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return todoLists
+    }
 
     // Other database methods for managing tasks, lists, and updates
 }
