@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class TodoListAdapter(private val todoLists: List<String>) :
+class TodoListAdapter(private var todoLists: List<String>) :
     RecyclerView.Adapter<TodoListAdapter.TodoListViewHolder>() {
 
     // ViewHolder class for the RecyclerView
@@ -29,5 +29,10 @@ class TodoListAdapter(private val todoLists: List<String>) :
     override fun getItemCount(): Int {
         // Return the number of items in the list
         return todoLists.size
+    }
+    // Method to update the list
+    fun updateTodoList(newTodoLists: List<String>) {
+        todoLists = newTodoLists
+        notifyDataSetChanged()
     }
 }

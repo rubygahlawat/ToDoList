@@ -1,5 +1,6 @@
 package com.android.todoapplication
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -20,11 +21,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
         dbHelper = TodoDatabaseHelper(this)
 
         todoListRecyclerView = findViewById(R.id.todo_list_recycler_view)
-        // Set up RecyclerView
+
         todoListRecyclerView.layoutManager = LinearLayoutManager(this)
+
 
         // Fetch data from SQLite and display it
         val todoLists = dbHelper.getAllTodoLists()
@@ -39,7 +42,12 @@ class MainActivity : AppCompatActivity() {
             if (taskText.isNotEmpty()) {
                 // Insert the task into the SQLite database
                 dbHelper.insertTask(taskText)
-                Toast.makeText(this, "Task added:$taskText", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Task added: $taskText", Toast.LENGTH_SHORT).show()
+
+                // Fetch updated data and notify the adapter
+                val updatedTodoLists = dbHelper.getAllTodoLists()
+                adapter.updateTodoList(updatedTodoLists)  // Call a custom method in the adapter
+
                 todoInput.text.clear()  // Clear the input after adding
             } else {
                 Toast.makeText(this, "Please enter a task", Toast.LENGTH_SHORT).show()
@@ -47,3 +55,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
