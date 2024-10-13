@@ -28,6 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
+                android:textFontWeight="@integer/material_motion_duration_long_1"
                 android:textColor="@color/black"
                 android:paddingTop="8dp" />
             <!-- Total Item Count -->

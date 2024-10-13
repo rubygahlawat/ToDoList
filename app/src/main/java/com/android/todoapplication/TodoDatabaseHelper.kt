@@ -2,6 +2,7 @@ package com.android.todoapplication
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
@@ -47,19 +48,22 @@ class TodoDatabaseHelper(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TODO_LIST")
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_TODO_ITEM")
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_TODO_LIST")
         onCreate(db)
     }
 
-    fun insertTask(taskText: String) {
+    // Insert a new todo list
+    fun insertTodoList(listName: String) {
         val db = this.writableDatabase
-        val values = ContentValues()
-        values.put(COLUMN_LIST_NAME, taskText)
+        val values = ContentValues().apply {
+            put(COLUMN_LIST_NAME, listName)
+        }
         db.insert(TABLE_TODO_LIST, null, values)
         db.close()
     }
 
+    // Retrieve all todo lists
     fun getAllTodoLists(): List<String> {
         val todoLists = mutableListOf<String>()
         val db = this.readableDatabase
@@ -76,5 +80,52 @@ class TodoDatabaseHelper(context: Context) :
         return todoLists
     }
 
-    // Other database methods for managing tasks, lists, and updates
+    // Insert a new todo item
+    fun insertTodoItem(itemName: String, dueDate: String?, listId: Int): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ITEM_NAME, itemName)
+            put(COLUMN_ITEM_DUE_DATE, dueDate)
+            put(COLUMN_ITEM_LIST_ID, listId)
+        }
+        val result = db.insert(TABLE_TODO_ITEM, null, values)
+        db.close()
+        return result // Return the result of the insertion
+    }
+
+    fun getTodoItemsForList(listId: Int): List<Pair<String, String?>> {
+        val todoItems = mutableListOf<Pair<String, String?>>()
+        val db = this.readableDatabase
+        val query = "SELECT $COLUMN_ITEM_NAME, $COLUMN_ITEM_DUE_DATE FROM $TABLE_TODO_ITEM WHERE $COLUMN_ITEM_LIST_ID = ?"
+        val cursor = db.rawQuery(query, arrayOf(listId.toString()))
+
+        if (cursor.moveToFirst()) {
+            do {
+                val itemName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ITEM_NAME))
+                val dueDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ITEM_DUE_DATE))
+                todoItems.add(Pair(itemName, dueDate))
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return todoItems
+    }
+
+    // Method to update a todo item completion status
+    fun updateTodoItemCompletion(itemId: Int, isCompleted: Boolean) {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ITEM_COMPLETED, if (isCompleted) 1 else 0)
+        }
+        db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+        db.close()
+    }
+
+    // Method to delete a todo item
+    fun deleteTodoItem(itemId: Int) {
+        val db = this.writableDatabase
+        db.delete(TABLE_TODO_ITEM, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+        db.close()
+    }
+
+
 }

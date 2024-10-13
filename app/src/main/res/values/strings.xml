@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">ToDo Application</string>
+    <string name="add_a_new_list">Add a new list...</string>
+    <string name="add_list">Add List</string>
+    <string name="total_items_0">Total Items: 0</string>
+    <string name="completed_tasks_0">Completed Tasks: 0</string>
+    <string name="add_new_task">Add New Task</string>
+    <string name="select_date">Select Date</string>
+    <string name="enter_task_name">Enter Task Name</string>
+    <string name="select_due_date">Select Due date</string>
+    <string name="delete_task" />
+    <string name="submit">Submit</string>
 </resources>

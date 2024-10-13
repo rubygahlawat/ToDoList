@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
 
         // Fetch data from SQLite and display it
         val todoLists = dbHelper.getAllTodoLists()
-        adapter = TodoListAdapter(todoLists)
+        adapter = TodoListAdapter(todoLists,this)
+
         todoListRecyclerView.adapter = adapter
 
         val todoInput = findViewById<EditText>(R.id.todo_input)
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity() {
             val taskText = todoInput.text.toString()
             if (taskText.isNotEmpty()) {
                 // Insert the task into the SQLite database
-                dbHelper.insertTask(taskText)
+                dbHelper.insertTodoList(taskText)
                 Toast.makeText(this, "Task added: $taskText", Toast.LENGTH_SHORT).show()
 
                 // Fetch updated data and notify the adapter
@@ -55,4 +56,3 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-
