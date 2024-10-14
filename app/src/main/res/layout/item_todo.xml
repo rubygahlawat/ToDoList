@@ -28,6 +28,15 @@
         android:paddingStart="8dp"
         android:textSize="16sp"/>
 
+    <!-- Edit Button -->
+    <ImageButton
+        android:id="@+id/buttonEditTask"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_edit"
+        android:contentDescription="@string/edit_task"
+        android:layout_marginEnd="8dp"/>
+
     <ImageButton
         android:id="@+id/buttonDeleteTask"
         android:layout_width="wrap_content"

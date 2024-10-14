@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,8 +42,9 @@ class TodoItemListActivity : AppCompatActivity() {
             // Create an Intent to start the AddTodoActivity
             val intent = Intent(this, AddTodoActivity::class.java)
             intent.putExtra("ITEM_INDEX", itemIndex + 1) // Pass the index to AddTodoActivity
-            startActivity(intent) // Start the new activity
+            startActivityForResult(intent, ADD_TASK_REQUEST_CODE) // Start for result
         }
+
 
         // Optional: Log the retrieved item and index for debugging purposes
         Log.d(ContentValues.TAG, "Todo Item: $todoItem, Index: $itemIndex")
@@ -63,5 +63,17 @@ class TodoItemListActivity : AppCompatActivity() {
         // Create and set the adapter
         todoAdapter = TodoItemAdapter(tasks)
         recyclerViewTasks.adapter = todoAdapter
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == ADD_TASK_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Task was added successfully, reload the tasks
+            loadTasks()
+        }
+    }
+
+    companion object {
+        const val ADD_TASK_REQUEST_CODE = 1
     }
 }

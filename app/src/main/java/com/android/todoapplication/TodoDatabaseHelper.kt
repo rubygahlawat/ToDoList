@@ -110,15 +110,18 @@ class TodoDatabaseHelper(context: Context) :
         return todoItems
     }
 
-    // Method to update a todo item completion status
-    fun updateTodoItemCompletion(itemId: Int, isCompleted: Boolean) {
+    // Method to update a todo item
+    fun updateTodoItem(itemId: Int, taskName: String, dueDate: String,isCompleted: Boolean) {
         val db = this.writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_ITEM_COMPLETED, if (isCompleted) 1 else 0)
+            put(COLUMN_ITEM_NAME, taskName) // Assuming COLUMN_ITEM_NAME is the name of the column for task names
+            put(COLUMN_ITEM_DUE_DATE, dueDate)   // Assuming COLUMN_DUE_DATE is the name of the column for due dates
         }
         db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
         db.close()
     }
+
 
     // Method to delete a todo item
     fun deleteTodoItem(itemId: Int) {
