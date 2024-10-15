@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 
 class TodoDatabaseHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -64,16 +65,56 @@ class TodoDatabaseHelper(context: Context) :
     }
 
     // Retrieve all todo lists
-    fun getAllTodoLists(): List<String> {
-        val todoLists = mutableListOf<String>()
+//    fun getAllTodoLists(): List<String> {
+//        val todoLists = mutableListOf<String>()
+//        val db = this.readableDatabase
+//        val query = "SELECT $COLUMN_LIST_NAME FROM $TABLE_TODO_LIST"
+//        val cursor = db.rawQuery(query, null)
+//
+//        if (cursor.moveToFirst()) {
+//            do {
+//                val listName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LIST_NAME))
+//                todoLists.add(listName)
+//            } while (cursor.moveToNext())
+//        }
+//        cursor.close()
+//        return todoLists
+//    }
+// Retrieve all todo lists with item counts
+    fun getTodoListsWithCounts(): List<Map<String, Any>> {
+        val todoLists = mutableListOf<Map<String, Any>>()
         val db = this.readableDatabase
-        val query = "SELECT $COLUMN_LIST_NAME FROM $TABLE_TODO_LIST"
+
+        // Query to get the total and completed items for each list
+        val query = """
+        SELECT 
+            l.$COLUMN_LIST_ID, 
+            l.$COLUMN_LIST_NAME, 
+            COUNT(i.$COLUMN_ITEM_ID) AS totalItems, 
+            SUM(CASE WHEN i.$COLUMN_ITEM_COMPLETED = 1 THEN 1 ELSE 0 END) AS completedItems
+        FROM $TABLE_TODO_LIST l
+        LEFT JOIN $TABLE_TODO_ITEM i ON l.$COLUMN_LIST_ID = i.$COLUMN_ITEM_LIST_ID
+        GROUP BY l.$COLUMN_LIST_ID, l.$COLUMN_LIST_NAME
+    """.trimIndent()
+
         val cursor = db.rawQuery(query, null)
 
         if (cursor.moveToFirst()) {
             do {
+                val listId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_LIST_ID))
                 val listName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LIST_NAME))
-                todoLists.add(listName)
+                val totalItems = cursor.getInt(cursor.getColumnIndexOrThrow("totalItems"))
+                val completedItems = cursor.getInt(cursor.getColumnIndexOrThrow("completedItems"))
+
+                // Add a map for each to-do list, including the name, total, and completed items
+                todoLists.add(
+                    mapOf(
+                        "listId" to listId,
+                        "listName" to listName,
+                        "totalItems" to totalItems,
+                        "completedItems" to completedItems
+                    )
+                )
             } while (cursor.moveToNext())
         }
         cursor.close()
@@ -93,41 +134,91 @@ class TodoDatabaseHelper(context: Context) :
         return result // Return the result of the insertion
     }
 
-    fun getTodoItemsForList(listId: Int): List<Pair<String, String?>> {
-        val todoItems = mutableListOf<Pair<String, String?>>()
+    fun getTodoItemsForList(listId: Int): List<TodoItem> {
+        val todoItems = mutableListOf<TodoItem>()
         val db = this.readableDatabase
-        val query = "SELECT $COLUMN_ITEM_NAME, $COLUMN_ITEM_DUE_DATE FROM $TABLE_TODO_ITEM WHERE $COLUMN_ITEM_LIST_ID = ?"
+        val query =
+            "SELECT $COLUMN_ITEM_NAME, $COLUMN_ITEM_DUE_DATE, $COLUMN_ITEM_ID, $COLUMN_ITEM_COMPLETED FROM $TABLE_TODO_ITEM WHERE $COLUMN_ITEM_LIST_ID = ?"
         val cursor = db.rawQuery(query, arrayOf(listId.toString()))
 
         if (cursor.moveToFirst()) {
             do {
                 val itemName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ITEM_NAME))
                 val dueDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ITEM_DUE_DATE))
-                todoItems.add(Pair(itemName, dueDate))
+                val taskId =
+                    cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ITEM_ID)) // Return as Int
+                val isTaskCompleted =
+                    cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ITEM_COMPLETED)) == 1 // Return as Boolean (1 -> true, 0 -> false)
+
+                todoItems.add(TodoItem(itemName, dueDate, taskId, isTaskCompleted))
             } while (cursor.moveToNext())
         }
+
         cursor.close()
+        db.close() // Close the database after reading
         return todoItems
     }
 
     // Method to update a todo item
-    fun updateTodoItem(itemId: Int, taskName: String, dueDate: String,isCompleted: Boolean) {
+//    fun updateTodoItem(itemId: Int, taskName: String, dueDate: String,isCompleted: Boolean) : Boolean {
+
+    fun updateTodoItem(itemId: Int, taskName: String, dueDate: String): Boolean {
         val db = this.writableDatabase
         val values = ContentValues().apply {
-            put(COLUMN_ITEM_COMPLETED, if (isCompleted) 1 else 0)
-            put(COLUMN_ITEM_NAME, taskName) // Assuming COLUMN_ITEM_NAME is the name of the column for task names
-            put(COLUMN_ITEM_DUE_DATE, dueDate)   // Assuming COLUMN_DUE_DATE is the name of the column for due dates
+            put(
+                COLUMN_ITEM_NAME,
+                taskName
+            ) // Assuming COLUMN_ITEM_NAME is the name of the column for task names
+            put(
+                COLUMN_ITEM_DUE_DATE,
+                dueDate
+            ) // Assuming COLUMN_DUE_DATE is the name of the column for due dates
         }
-        db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+
+        val result =
+            db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+
+        // Log the result of the update
+        if (result != 0) {
+            Log.d("UpdateTodoItem", "Update successful for itemId: $itemId")
+        } else {
+            Log.e("UpdateTodoItem", "Update failed for itemId: $itemId")
+        }
+
         db.close()
+        return result != 0
+    }
+
+    fun updateCheckbox(itemId: Int, isChecked: Boolean): Boolean {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(
+                COLUMN_ITEM_COMPLETED,
+                if (isChecked) 1 else 0
+            ) // Use 1 for checked and 0 for unchecked
+        }
+
+        val result =
+            db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+
+        // Log the result of the update
+        if (result != 0) {
+            Log.d("UpdateCheckbox", "Checkbox update successful for itemId: $itemId")
+        } else {
+            Log.e("UpdateCheckbox", "Checkbox update failed for itemId: $itemId")
+        }
+
+        db.close()
+        return result != 0
     }
 
 
     // Method to delete a todo item
-    fun deleteTodoItem(itemId: Int) {
+    fun deleteTodoItem(itemId: Int): Boolean {
         val db = this.writableDatabase
-        db.delete(TABLE_TODO_ITEM, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+        val result = db.delete(TABLE_TODO_ITEM, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
         db.close()
+        return result != 0
     }
 
 

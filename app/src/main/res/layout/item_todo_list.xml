@@ -31,23 +31,15 @@
                 android:textFontWeight="@integer/material_motion_duration_long_1"
                 android:textColor="@color/black"
                 android:paddingTop="8dp" />
-            <!-- Total Item Count -->
             <TextView
-                android:id="@+id/total_item_count_text_view"
+                android:id="@+id/task_counters"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Total Items: 0"
                 android:textSize="14sp"
                 android:textColor="@color/black" />
 
-            <!-- Completed Task Count -->
-            <TextView
-                android:id="@+id/completed_task_count_text_view"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Completed Tasks: 0"
-                android:textSize="14sp"
-                android:textColor="@color/black" />
+
 
 
         </LinearLayout>

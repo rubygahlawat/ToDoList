@@ -9,51 +9,52 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class TodoListAdapter(
-    private var todoLists: List<String>,
+    private var todoLists: List<Map<String, Any>>,
     private val context: Context
 ) : RecyclerView.Adapter<TodoListAdapter.TodoListViewHolder>() {
 
     // ViewHolder class for the RecyclerView
-    class TodoListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val listNameTextView: TextView = itemView.findViewById(R.id.list_name_text_view)
+    inner class TodoListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val textViewListName: TextView = itemView.findViewById(R.id.list_name_text_view)
+        val textViewCounters: TextView = itemView.findViewById(R.id.task_counters)
 
-        // The bind function now accepts a click listener
-        fun bind(todoItem: String, onItemClick: (Int) -> Unit) {
-            listNameTextView.text = todoItem // Use listNameTextView to set text
+        fun bind(listName: String, onItemClick: (Int) -> Unit) {
+            textViewListName.text = listName
             itemView.setOnClickListener {
-                // Trigger the click listener with the current position
                 onItemClick(adapterPosition)
             }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TodoListViewHolder {
-        // Inflate the layout for each item in the RecyclerView
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_todo_list, parent, false)
         return TodoListViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: TodoListViewHolder, position: Int) {
-        val todoItem = todoLists[position] // Get the item at the current position
-        holder.bind(todoItem) { index ->
-            // Start TodoItemListActivity with the selected todo item and index
+        val list = todoLists[position]
+        val listName = list["listName"] as String
+        val totalItems = list["totalItems"] as Int
+        val completedItems = list["completedItems"] as Int
+
+        holder.textViewListName.text = listName
+        holder.textViewCounters.text = "Completed: $completedItems / Total: $totalItems"
+        holder.bind(listName) { index ->
             val intent = Intent(context, TodoItemListActivity::class.java).apply {
-                putExtra("TODO_ITEM", todoItem) // Pass the todo item title
-                putExtra("INDEX", index) // Pass the index
+                putExtra("TODO_ITEM", listName)
+                putExtra("INDEX", index)
             }
             context.startActivity(intent)
         }
     }
 
     override fun getItemCount(): Int {
-        // Return the number of items in the list
         return todoLists.size
     }
 
-    // Method to update the list
-    fun updateTodoList(newTodoLists: List<String>) {
+    fun updateTodoList(newTodoLists: List<Map<String, Any>>) {
         todoLists = newTodoLists
-        notifyDataSetChanged() // Notify the adapter of the data change
+        notifyDataSetChanged()
     }
 }

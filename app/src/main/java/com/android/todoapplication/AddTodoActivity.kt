@@ -11,16 +11,13 @@ import androidx.appcompat.app.AppCompatActivity
 import java.util.Calendar
 
 class AddTodoActivity : AppCompatActivity() {
-    // Initialize your database helper
+
     private lateinit var TodoDatabaseHelper: TodoDatabaseHelper
-    private var itemIndex: Int = -1 // Variable to hold the index
+    private var taskID: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_todo)
-
-        // Retrieve the index passed from the previous activity
-        itemIndex = intent.getIntExtra("ITEM_INDEX", -1) // Default value is -1 if not found
 
         val dueDateEditText = findViewById<EditText>(R.id.dueDate)
         val editTextTaskName = findViewById<EditText>(R.id.editTextName)
@@ -29,62 +26,64 @@ class AddTodoActivity : AppCompatActivity() {
         // Initialize TaskDatabaseHelper
         TodoDatabaseHelper = TodoDatabaseHelper(this)
 
-        // Create a Calendar instance to get the current date
-        val calendar = Calendar.getInstance()
+        // Retrieve task details and index from Intent
+        val listId = intent.getIntExtra("LIST_ID",-1)
+        val taskName = intent.getStringExtra("TASK_NAME")
+        val dueDate = intent.getStringExtra("TASK_DUE_DATE")
+        taskID = intent.getIntExtra("TASK_ID", -1)
 
-        // Set an OnClickListener for the EditText
+        // Prefill the fields if editing an existing task
+        taskName?.let { editTextTaskName.setText(it) }
+        dueDate?.let { dueDateEditText.setText(it) }
+
+        val calendar = Calendar.getInstance()
         dueDateEditText.setOnClickListener {
-            // Get the current year, month, and day
             val year = calendar.get(Calendar.YEAR)
             val month = calendar.get(Calendar.MONTH)
             val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-            // Create a DatePickerDialog to show the calendar
             val datePickerDialog = DatePickerDialog(
                 this,
                 { _, selectedYear, selectedMonth, selectedDay ->
-                    // Format the selected date and display it in the EditText
                     dueDateEditText.setText("$selectedDay/${selectedMonth + 1}/$selectedYear")
                 },
-                year,
-                month,
-                day
+                year, month, day
             )
-            // Disable previous dates
             datePickerDialog.datePicker.minDate = calendar.timeInMillis
-
-            // Show the DatePickerDialog
             datePickerDialog.show()
         }
 
-        // Set OnClickListener for the Submit button
         submitButton.setOnClickListener {
-            val taskName = editTextTaskName.text.toString().trim()
-            val dueDate = dueDateEditText.text.toString().trim()
-            val listId = itemIndex // Use the passed index
-// Add a log to print the value of listId
-            Log.d("AddTodoActivity", "List ID: $listId") // Log the listId value
+            val updatedTaskName = editTextTaskName.text.toString().trim()
+            val updatedDueDate = dueDateEditText.text.toString().trim()
 
-            if (taskName.isEmpty()) {
-                // Show a message if task name or due date is empty
+            if (updatedTaskName.isEmpty()) {
                 Toast.makeText(this, "Please enter task name", Toast.LENGTH_SHORT).show()
             } else {
-                // Insert task into SQLite database
-                val result = TodoDatabaseHelper.insertTodoItem(taskName, dueDate, listId)
-                if (result != -1L) {
-                    Toast.makeText(this, "Task added successfully", Toast.LENGTH_SHORT).show()
-                    // Clear the input fields after adding the task
-                    editTextTaskName.text.clear()
-                    dueDateEditText.text.clear()
-                    val resultIntent = Intent()
-                    resultIntent.putExtra("TASK_ADDED", true)
-                    setResult(RESULT_OK, resultIntent)
-                    // Redirect to the previous layout
-                    finish()
+                // Check if editing an existing task
+                if (taskID != -1) {
+                    // Update the task in the SQLite database
+                    val result = TodoDatabaseHelper.updateTodoItem(taskID, updatedTaskName, updatedDueDate)
+                    if (result) {
+                        Toast.makeText(this, "Task updated successfully", Toast.LENGTH_SHORT).show()
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Error updating task", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
-                    Toast.makeText(this, "Error adding task", Toast.LENGTH_SHORT).show()
+                    // Add a new task if no index is passed
+                    val result = TodoDatabaseHelper.insertTodoItem(updatedTaskName, updatedDueDate, listId)
+                    if (result != -1L) {
+                        Toast.makeText(this, "Task added successfully", Toast.LENGTH_SHORT).show()
+                        editTextTaskName.text.clear()
+                        dueDateEditText.text.clear()
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Error adding task", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 }
+
