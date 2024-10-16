@@ -45,7 +45,8 @@ class AddTodoActivity : AppCompatActivity() {
             val datePickerDialog = DatePickerDialog(
                 this,
                 { _, selectedYear, selectedMonth, selectedDay ->
-                    dueDateEditText.setText("$selectedDay/${selectedMonth + 1}/$selectedYear")
+//                    dueDateEditText.setText("$selectedDay/${selectedMonth + 1}/$selectedYear")
+                    dueDateEditText.setText("$selectedYear-${selectedMonth + 1}-$selectedDay")
                 },
                 year, month, day
             )
@@ -56,7 +57,7 @@ class AddTodoActivity : AppCompatActivity() {
         submitButton.setOnClickListener {
             val updatedTaskName = editTextTaskName.text.toString().trim()
             val updatedDueDate = dueDateEditText.text.toString().trim()
-
+            Log.d("updatedDueDate", "Item at position $updatedDueDate")
             if (updatedTaskName.isEmpty()) {
                 Toast.makeText(this, "Please enter task name", Toast.LENGTH_SHORT).show()
             } else {

@@ -1,6 +1,8 @@
 package com.android.todoapplication
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
@@ -64,34 +66,41 @@ class TodoDatabaseHelper(context: Context) :
         db.close()
     }
 
-    // Retrieve all todo lists
-//    fun getAllTodoLists(): List<String> {
-//        val todoLists = mutableListOf<String>()
-//        val db = this.readableDatabase
-//        val query = "SELECT $COLUMN_LIST_NAME FROM $TABLE_TODO_LIST"
-//        val cursor = db.rawQuery(query, null)
-//
-//        if (cursor.moveToFirst()) {
-//            do {
-//                val listName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LIST_NAME))
-//                todoLists.add(listName)
-//            } while (cursor.moveToNext())
-//        }
-//        cursor.close()
-//        return todoLists
-//    }
-// Retrieve all todo lists with item counts
+    // Update a  todo list name
+    fun updateListName(listId: Int, listName: String): Boolean {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_LIST_NAME, listName)
+        }
+
+        // Log the incoming parameters
+        Log.d("UpdateTodoItem", "Attempting to update listName for listId: $listId with new name: $listName")
+
+        // Perform the update operation
+        val result = db.update(TABLE_TODO_LIST, values, "$COLUMN_LIST_ID = ?", arrayOf(listId.toString()))
+
+        // Log the result of the update
+        if (result != 0) {
+            Log.d("UpdateTodoItem", "Update successful for listId: $listId")
+        } else {
+            Log.e("UpdateTodoItem", "Update failed for listId: $listId. No rows affected.")
+        }
+
+        db.close()
+        return result != 0
+    }
     fun getTodoListsWithCounts(): List<Map<String, Any>> {
         val todoLists = mutableListOf<Map<String, Any>>()
         val db = this.readableDatabase
 
-        // Query to get the total and completed items for each list
+        // Updated query to get the total, completed items, and nearest due date for each list
         val query = """
         SELECT 
             l.$COLUMN_LIST_ID, 
             l.$COLUMN_LIST_NAME, 
             COUNT(i.$COLUMN_ITEM_ID) AS totalItems, 
-            SUM(CASE WHEN i.$COLUMN_ITEM_COMPLETED = 1 THEN 1 ELSE 0 END) AS completedItems
+            SUM(CASE WHEN i.$COLUMN_ITEM_COMPLETED = 1 THEN 1 ELSE 0 END) AS completedItems,
+            MIN(i.$COLUMN_ITEM_DUE_DATE) AS nearestDueDate
         FROM $TABLE_TODO_LIST l
         LEFT JOIN $TABLE_TODO_ITEM i ON l.$COLUMN_LIST_ID = i.$COLUMN_ITEM_LIST_ID
         GROUP BY l.$COLUMN_LIST_ID, l.$COLUMN_LIST_NAME
@@ -106,13 +115,17 @@ class TodoDatabaseHelper(context: Context) :
                 val totalItems = cursor.getInt(cursor.getColumnIndexOrThrow("totalItems"))
                 val completedItems = cursor.getInt(cursor.getColumnIndexOrThrow("completedItems"))
 
-                // Add a map for each to-do list, including the name, total, and completed items
+                // Get the nearest due date, or set to null if there are no items
+                val nearestDueDate = cursor.getString(cursor.getColumnIndexOrThrow("nearestDueDate"))
+                Log.d(TAG, "nearestDueDate: $nearestDueDate")
+                // Add a map for each to-do list, including the name, total, completed items, and nearest due date
                 todoLists.add(
                     mapOf(
                         "listId" to listId,
                         "listName" to listName,
                         "totalItems" to totalItems,
-                        "completedItems" to completedItems
+                        "completedItems" to completedItems,
+                        "dueDate" to (nearestDueDate ?: "No Due Date Added")
                     )
                 )
             } while (cursor.moveToNext())
@@ -120,6 +133,74 @@ class TodoDatabaseHelper(context: Context) :
         cursor.close()
         return todoLists
     }
+
+
+    // Retrieve all todo lists with item counts
+//    fun getTodoListsWithCounts(): List<Map<String, Any>> {
+//        val todoLists = mutableListOf<Map<String, Any>>()
+//        val db = this.readableDatabase
+//
+//        // Query to get the total and completed items for each list
+//        val query = """
+//        SELECT
+//            l.$COLUMN_LIST_ID,
+//            l.$COLUMN_LIST_NAME,
+//            COUNT(i.$COLUMN_ITEM_ID) AS totalItems,
+//            SUM(CASE WHEN i.$COLUMN_ITEM_COMPLETED = 1 THEN 1 ELSE 0 END) AS completedItems
+//        FROM $TABLE_TODO_LIST l
+//        LEFT JOIN $TABLE_TODO_ITEM i ON l.$COLUMN_LIST_ID = i.$COLUMN_ITEM_LIST_ID
+//        GROUP BY l.$COLUMN_LIST_ID, l.$COLUMN_LIST_NAME
+//    """.trimIndent()
+//
+//        val cursor = db.rawQuery(query, null)
+//
+//        if (cursor.moveToFirst()) {
+//            do {
+//                val listId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_LIST_ID))
+//                val listName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LIST_NAME))
+//                val totalItems = cursor.getInt(cursor.getColumnIndexOrThrow("totalItems"))
+//                val completedItems = cursor.getInt(cursor.getColumnIndexOrThrow("completedItems"))
+//
+//                // Add a map for each to-do list, including the name, total, and completed items
+//                todoLists.add(
+//                    mapOf(
+//                        "listId" to listId,
+//                        "listName" to listName,
+//                        "totalItems" to totalItems,
+//                        "completedItems" to completedItems
+//                    )
+//                )
+//            } while (cursor.moveToNext())
+//        }
+//        cursor.close()
+//        return todoLists
+//    }
+//    @SuppressLint("Range")
+//    fun getNearestDueDateForLists(): Map<Long, String?> {
+//        val nearestDueDates = mutableMapOf<Long, String?>()
+//
+//        // SQL query to find the nearest due date for each list
+//        val cursor = readableDatabase.rawQuery(
+//            """
+//        SELECT $COLUMN_ITEM_LIST_ID, MIN($COLUMN_ITEM_DUE_DATE) AS nearest_due_date
+//        FROM $TABLE_TODO_ITEM
+//        WHERE $COLUMN_ITEM_DUE_DATE IS NOT NULL
+//        GROUP BY $COLUMN_ITEM_LIST_ID
+//        """, null
+//        )
+//
+//        if (cursor.moveToFirst()) {
+//            do {
+//                val listId = cursor.getLong(cursor.getColumnIndex(COLUMN_ITEM_LIST_ID))
+//                val nearestDueDate = cursor.getString(cursor.getColumnIndex("nearest_due_date"))
+//                nearestDueDates[listId] = nearestDueDate
+//            } while (cursor.moveToNext())
+//        }
+//
+//        cursor.close()
+//        return nearestDueDates
+//    }
+
 
     // Insert a new todo item
     fun insertTodoItem(itemName: String, dueDate: String?, listId: Int): Long {
@@ -159,24 +240,15 @@ class TodoDatabaseHelper(context: Context) :
         return todoItems
     }
 
-    // Method to update a todo item
-//    fun updateTodoItem(itemId: Int, taskName: String, dueDate: String,isCompleted: Boolean) : Boolean {
 
     fun updateTodoItem(itemId: Int, taskName: String, dueDate: String): Boolean {
         val db = this.writableDatabase
         val values = ContentValues().apply {
-            put(
-                COLUMN_ITEM_NAME,
-                taskName
-            ) // Assuming COLUMN_ITEM_NAME is the name of the column for task names
-            put(
-                COLUMN_ITEM_DUE_DATE,
-                dueDate
-            ) // Assuming COLUMN_DUE_DATE is the name of the column for due dates
+            put(COLUMN_ITEM_NAME,taskName) // Assuming COLUMN_ITEM_NAME is the name of the column for task names
+            put(COLUMN_ITEM_DUE_DATE,dueDate) // Assuming COLUMN_DUE_DATE is the name of the column for due dates
         }
 
-        val result =
-            db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
+        val result = db.update(TABLE_TODO_ITEM, values, "$COLUMN_ITEM_ID = ?", arrayOf(itemId.toString()))
 
         // Log the result of the update
         if (result != 0) {

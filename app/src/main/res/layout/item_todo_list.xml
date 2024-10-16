@@ -22,15 +22,36 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-            <!-- List Name Text View -->
-            <TextView
-                android:id="@+id/list_name_text_view"
-                android:layout_width="wrap_content"
+
+            <!-- Horizontal Layout for List Name and Edit Button -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:textFontWeight="@integer/material_motion_duration_long_1"
-                android:textColor="@color/black"
-                android:paddingTop="8dp" />
+                android:orientation="horizontal">
+
+                <!-- List Name Text View -->
+                <TextView
+                    android:id="@+id/list_name_text_view"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="18sp"
+                    android:textColor="@color/black"
+                    android:paddingTop="8dp" />
+
+                <!-- Edit Button -->
+                <ImageButton
+                    android:id="@+id/edit_list_name_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:src="@android:drawable/ic_menu_edit"
+                    android:contentDescription="Edit list name"
+                    android:background="?android:selectableItemBackground"
+                    android:padding="8dp" />
+            </LinearLayout>
+
+            <!-- Task Counter Text View -->
             <TextView
                 android:id="@+id/task_counters"
                 android:layout_width="wrap_content"
@@ -39,6 +60,13 @@
                 android:textSize="14sp"
                 android:textColor="@color/black" />
 
+            <TextView
+                android:id="@+id/dueDateTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nearest Due Date:"
+                android:textSize="14sp"
+                android:textColor="@color/black" />
 
 
 

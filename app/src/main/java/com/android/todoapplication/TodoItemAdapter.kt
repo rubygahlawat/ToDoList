@@ -2,6 +2,8 @@ package com.android.todoapplication
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +12,10 @@ import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class TodoItemAdapter(
     private val context: Context, // Context for starting activity
@@ -25,6 +30,7 @@ class TodoItemAdapter(
         return ViewHolder(view)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         // Get the TodoItem at the current position
         val todoItem = todoList[position] // Get the task map for the current position
@@ -32,10 +38,26 @@ class TodoItemAdapter(
         // Set the task name and due date
         holder.textViewTask.text = todoItem["taskName"] // Access task name from the map
         holder.textViewDueDate.text =
-            todoItem["dueDate"] ?: "No Due Date" // Access due date from the map
-        // Load the checkbox state from the task map
+            todoItem["dueDate"] ?: "No Due Date"
+
         val isCompleted = todoItem["isCompleted"] == "Completed" // Check the task completion status
         holder.checkboxTask.isChecked = isCompleted // Set the checkbox state
+
+        val dueDate = LocalDate.parse(todoItem["dueDate"], DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val currentDate = LocalDate.now()
+
+        // Highlight logic based on due date
+        if (dueDate.isBefore(currentDate)) {
+            // Change the text color to red for overdue items
+            holder.textViewTask.setBackgroundColor(Color.RED)
+        } else if (dueDate.isEqual(currentDate)) {
+            // Change the text color to yellow for items due today
+            holder.textViewTask.setBackgroundColor(Color.YELLOW)
+        } else {
+            // Change the text color to black for items not due yet
+            holder.textViewTask.setTextColor(Color.BLACK)
+        }
+
         // Set an OnCheckedChangeListener on the CheckBox
         holder.checkboxTask.setOnCheckedChangeListener { _, isChecked ->
             // Optional logging for debugging
