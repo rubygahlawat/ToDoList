@@ -115,7 +115,7 @@ class TodoListAdapter(
                     holder.textViewListName.text = newName
                     // Try updating the list name in the database
                     try {
-                        val result = db.updateListName(
+                        val result = db.updateListName(context,
                             list["listId"] as Int,
                             newName
                         )  // Assuming `id` is stored as an Int
@@ -167,4 +167,6 @@ class TodoListAdapter(
         todoLists = newTodoLists
         notifyDataSetChanged()
     }
+
+
 }

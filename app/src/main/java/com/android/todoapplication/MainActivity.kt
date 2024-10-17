@@ -51,17 +51,35 @@ class MainActivity : AppCompatActivity() {
             val taskText = todoInput.text
             if (taskText.isNotEmpty()) {
                 // Insert the task into the SQLite database
-                dbHelper.insertTodoList(taskText.toString())
-                Toast.makeText(this, "Task added: $taskText", Toast.LENGTH_SHORT).show()
+                val isInserted = dbHelper.insertTodoList(this,taskText.toString())
+                // Check if the insert was successful
+                if (isInserted) {
+                    Toast.makeText(this, "Task added: $taskText", Toast.LENGTH_SHORT).show()
 
-                // Fetch updated lists with task counters
-                val updatedTodoLists = dbHelper.getTodoListsWithCounts()
-                adapter.updateTodoList(updatedTodoLists)  // Update the adapter with new data
+                    // Fetch updated lists with task counters
+                    val updatedTodoLists = dbHelper.getTodoListsWithCounts()
+                    adapter.updateTodoList(updatedTodoLists)  // Update the adapter with new data
 
-                todoInput.text.clear()  // Clear the input after adding
+                    todoInput.text.clear()  // Clear the input after adding
+                }
             } else {
                 Toast.makeText(this, "Please enter a task", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+    private fun fetchAndDisplayTodoLists() {
+        // Fetch lists with task counters
+        val todoListsWithCounts = dbHelper.getTodoListsWithCounts()
+        Log.d("todoListsWithCounts", "Item at position $todoListsWithCounts")
+        adapter = TodoListAdapter(todoListsWithCounts, this, dbHelper)
+        todoListRecyclerView.adapter = adapter
+    }
+
+    override fun onResume() {
+        super.onResume()
+        fetchAndDisplayTodoLists()  // Refresh the displayed lists whenever the activity is resumed
+    }
+
+
 }

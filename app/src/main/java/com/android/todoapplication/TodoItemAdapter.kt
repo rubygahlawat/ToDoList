@@ -1,5 +1,6 @@
 package com.android.todoapplication
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -43,13 +44,15 @@ class TodoItemAdapter(
         val isCompleted = todoItem["isCompleted"] == "Completed" // Check the task completion status
         holder.checkboxTask.isChecked = isCompleted // Set the checkbox state
 
-        val dueDate = LocalDate.parse(todoItem["dueDate"], DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val dueDate =
+            LocalDate.parse(todoItem["dueDate"], DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         val currentDate = LocalDate.now()
 
         // Highlight logic based on due date
         if (dueDate.isBefore(currentDate)) {
             // Change the text color to red for overdue items
             holder.textViewTask.setBackgroundColor(Color.RED)
+            holder.textViewTask.setTextColor(Color.WHITE)
         } else if (dueDate.isEqual(currentDate)) {
             // Change the text color to yellow for items due today
             holder.textViewTask.setBackgroundColor(Color.YELLOW)
@@ -92,6 +95,10 @@ class TodoItemAdapter(
         holder.buttonDeleteTask.setOnClickListener {
             deleteTask(todoItem["taskId"]?.toIntOrNull() ?: -1) // Safely get taskId
         }
+        // Set up the move button click listener
+        holder.buttonMoveTask.setOnClickListener {
+            showMoveDialog(todoItem)
+        }
 
         // Optional logging for debugging
         Log.d("TodoItemAdapter", "Position: $position, Task: $todoItem")
@@ -109,6 +116,7 @@ class TodoItemAdapter(
         val textViewTask: TextView = itemView.findViewById(R.id.textViewTask)
         val buttonEditTask: ImageButton = itemView.findViewById(R.id.buttonEditTask)
         val buttonDeleteTask: ImageButton = itemView.findViewById(R.id.buttonDeleteTask)
+        val buttonMoveTask: ImageButton = itemView.findViewById(R.id.buttonMoveTask)
     }
 
     // Function to delete a task
@@ -127,4 +135,54 @@ class TodoItemAdapter(
             Toast.makeText(context, "Error deleting task", Toast.LENGTH_SHORT).show()
         }
     }
+
+    private fun showMoveDialog(currentList: Map<String, Any>) {
+        // Assume you have a method to get the available lists
+        val listIdString = currentList["listId"] as String // Cast to String
+        val listId = listIdString.toInt()
+        val availableLists = db.getAvailableLists(listId) // This should return a list of available lists
+
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Move To List")
+
+        // Create a list of list names to display
+        val listNames = availableLists.map { it["listName"] as String }.toTypedArray()
+
+        // Set the items in the dialog
+        builder.setItems(listNames) { _, which ->
+            // Move the item to the selected list
+            val selectedList = availableLists[which]
+            Log.d("TodoApp", "Selected list: $selectedList")
+            Log.d("moveTodoItem", "Moving item from $currentList to $selectedList")
+            moveTodoItem(currentList, selectedList)
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+        builder.show()
+    }
+
+    private fun moveTodoItem(currentList: Map<String, Any>, targetList: Map<String, Any>) {
+
+        val listIdString = currentList["listId"] as String // Cast to String
+        val currentListId = listIdString.toInt()
+        val taskIdString = currentList["taskId"] as String // Cast to String
+        val currentTaskId = taskIdString.toInt()
+        val targetListId = targetList["listId"] as Int
+// Log the current list and the item being moved
+        Log.d("moveTodoItem", "Moving item from $currentListId to $targetListId")
+        // Update the database or your data model accordingly
+        try {
+            val result = db.moveList(currentListId, targetListId,currentTaskId) // Define this method in your DB helper
+            if (result) {
+                Toast.makeText(context, "Moved successfully", Toast.LENGTH_SHORT).show()
+                // Optionally, refresh your data if needed
+                notifyDataSetChanged() // Refresh the list to reflect the changes
+            } else {
+                Toast.makeText(context, "Error moving list", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
 }

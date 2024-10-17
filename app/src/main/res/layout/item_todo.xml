@@ -27,7 +27,15 @@
         android:layout_weight="1"
         android:paddingStart="8dp"
         android:textSize="16sp"/>
-
+    <!-- Move Button -->
+    <ImageButton
+        android:id="@+id/buttonMoveTask"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_send"
+        android:contentDescription="@string/move_task"
+        android:background="?android:selectableItemBackground"
+        android:layout_marginEnd="8dp"/>
     <!-- Edit Button -->
     <ImageButton
         android:id="@+id/buttonEditTask"

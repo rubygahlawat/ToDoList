@@ -39,7 +39,10 @@ class TodoItemListActivity : AppCompatActivity() {
         btnAddTask.setOnClickListener {
             // Create an Intent to start the AddTodoActivity
             val intent = Intent(this, AddTodoActivity::class.java)
-            intent.putExtra("LIST_ID", itemIndex + 1) // Pass the index to AddTodoActivity for new tasks
+            intent.putExtra(
+                "LIST_ID",
+                itemIndex + 1
+            ) // Pass the index to AddTodoActivity for new tasks
             startActivityForResult(intent, ADD_TASK_REQUEST_CODE) // Start for result
         }
     }
@@ -58,11 +61,13 @@ class TodoItemListActivity : AppCompatActivity() {
         val tasksList: List<Map<String, String>> = tasks.map { task ->
             val taskId = task.taskId.toString() // Get the taskId (Int converted to String)
             val taskName = task.taskName  // Get the task name (String)
-            val dueDate = task.dueDate  ?: "No Due Date" // Get the due date, provide default if null
-            val isCompleted = if (task.isCompleted) "Completed" else "Not Completed" // Get completion status
-
+            val dueDate = task.dueDate ?: "No Due Date" // Get the due date, provide default if null
+            val isCompleted =
+                if (task.isCompleted) "Completed" else "Not Completed" // Get completion status
+            val listId = itemIndex + 1
             // Create a map for task details
             mapOf(
+                "listId" to listId.toString(),
                 "taskId" to taskId,
                 "taskName" to taskName,
                 "dueDate" to dueDate, // dueDate is guaranteed to be a String
@@ -83,7 +88,10 @@ class TodoItemListActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        Log.d(TAG, "onActivityResult called with requestCode: $requestCode, resultCode: $resultCode")
+        Log.d(
+            TAG,
+            "onActivityResult called with requestCode: $requestCode, resultCode: $resultCode"
+        )
         if (requestCode == ADD_TASK_REQUEST_CODE && resultCode == RESULT_OK) {
             Log.d(TAG, "Reloading tasks after adding or editing")
             loadTasks()
